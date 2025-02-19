@@ -176,9 +176,9 @@ components/auth/UserManagementTable
 
 ### Phase 1: Basic Authentication
 - [x] Database schema setup
-- [ ] Basic login/logout functionality
-- [ ] Password setup flow
-- [ ] Dashboard redirects
+- [x] Basic login/logout functionality
+- [x] Password setup flow
+- [x] Dashboard redirects
 
 ### Phase 2: User Management
 - [ ] User invitation system
