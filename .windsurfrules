@@ -1,0 +1,217 @@
+# Project Rules and Guidelines
+
+## Development Philosophy
+As a senior developer with 10+ years of experience, these guidelines are crafted to ensure enterprise-grade quality, maintainability, and exceptional user experience.
+
+## Core Principles
+
+### ✅ Minimal Code, Maximum Efficiency
+- Write self-documenting, clean code that speaks for itself
+- Implement DRY (Don't Repeat Yourself) principle without over-abstraction
+- Performance optimization from day one, not an afterthought
+- Use proven design patterns appropriate for the context
+
+### ✅ Bug Fixes with 100% Confidence
+- Comprehensive root cause analysis with reproduction steps
+- Impact analysis on connected features and systems
+- Test cases for bug reproduction and fix validation
+- Peer review requirement for critical fixes
+- Regression testing checklist
+
+### ✅ Strict File Directory Structure
+- Adherence to predefined project structure
+- No arbitrary file creation
+- Maintain structured, organized, and scalable codebase
+
+```bash
+business-management/
+├── public/               # Static assets (images, icons, etc.)
+├── src/
+│   ├── app/             # App Router (Next.js 13+)
+│   │   ├── (auth)/      # Authentication routes
+│   │   ├── (internal)/  # Internal user routes
+│   │   └── (external)/  # External user routes
+│   ├── components/      # Reusable UI components
+│   │   ├── auth/        # Authentication components
+│   │   ├── dashboard/   # Dashboard components
+│   │   ├── services/    # Service-related components
+│   │   ├── ui/          # Basic UI components
+│   │   └── shared/      # Shared components
+│   ├── hooks/          # Custom hooks
+│   ├── lib/            # Utility functions & helpers
+│   │   ├── auth/       # Authentication utilities
+│   │   ├── rbac/       # RBAC implementation
+│   │   └── utils/      # General utilities
+│   ├── styles/         # Global styles (Tailwind CSS)
+│   ├── context/        # Global state management
+│   ├── services/       # API calls, external integrations
+│   ├── config/         # App configuration & environment
+│   ├── middleware/     # API & authentication middleware
+│   ├── store/          # State management (if needed)
+│   ├── types/          # TypeScript interfaces & types
+│   └── tests/          # Unit & integration tests
+├── project_docs/       # Project documentation
+├── supabase/          # Database migrations and types
+├── .env.local         # Environment variables
+├── next.config.js     # Next.js configuration
+├── package.json       # Dependencies & scripts
+├── tailwind.config.js # Tailwind CSS configuration
+└── tsconfig.json      # TypeScript configuration
+```
+
+### ✅ Branding & UI/UX Standards with Senior-Level Implementation
+- **Primary Color**: Egyptian Blue (#1034A6)
+  - Use for primary actions and key highlights
+  - Ensure WCAG 2.1 AA compliance for accessibility
+- **Secondary Color**: Gold Yellow (#F3BE2B)
+  - Use for notifications, warnings, and accent elements
+  - Implement with purpose, not for decoration
+- **UI Design Philosophy**: 
+  - AWS/Azure-inspired compact layout
+  - Information hierarchy based on user behavior analysis
+  - Progressive disclosure for complex features
+  - Responsive design with mobile-first approach
+  - Micro-interactions for better user feedback
+  - Performance-optimized animations
+
+### ✅ Predictability & Stability
+- No sudden disruptive changes
+- All modifications must be:
+  - Well-documented
+  - Justified
+  - Thoroughly tested
+
+## Feature Development Workflow
+
+### 1. Feature Documentation
+For each new feature, create and maintain:
+```
+project_docs/features/
+├── feature_name/
+│   ├── requirements.md     # Detailed requirements
+│   ├── technical_spec.md   # Technical implementation details
+│   ├── tasks.md           # Breakdown of tasks with status
+│   └── changelog.md       # Implementation log
+```
+
+### 2. Task Breakdown Process
+1. Create detailed task breakdown in `tasks.md`:
+   ```markdown
+   # Feature: [Name]
+   
+   ## Tasks
+   - [ ] Task 1: Description
+     - [ ] Subtask 1.1
+     - [ ] Subtask 1.2
+   - [ ] Task 2: Description
+   
+   ## Progress
+   - Start Date: 
+   - Current Status:
+   - Completed Tasks:
+   - Pending Tasks:
+   - Blockers:
+   ```
+
+### 3. Implementation Approach
+1. **Confirmation First**
+   - Present task breakdown for stakeholder approval
+   - Get explicit confirmation before implementation
+   - Document any changes to original requirements
+
+2. **Iterative Development**
+   - Implement features in logical, testable chunks
+   - Regular progress updates in changelog.md
+   - Daily status updates in tasks.md
+
+3. **Quality Checks**
+   - Unit tests for each significant component
+   - Integration tests for feature workflows
+   - UI/UX validation against design standards
+   - Performance benchmarking
+   - Accessibility compliance checking
+
+### 4. Feature Completion Checklist
+- [ ] All tasks marked complete in tasks.md
+- [ ] Documentation updated
+- [ ] Tests passing
+- [ ] Performance metrics meeting targets
+- [ ] Accessibility requirements met
+- [ ] Code review completed
+- [ ] Stakeholder sign-off obtained
+
+## Code Quality Standards
+
+### TypeScript Best Practices
+- Strict type checking enabled
+- Interface over Type when defining objects
+- Proper use of generics for reusable components
+- Meaningful type names that describe purpose
+
+### React Component Structure
+- Functional components with proper hook usage
+- Custom hooks for shared logic
+- Memoization for expensive operations
+- Proper prop typing and validation
+
+### Performance Optimization
+- Lazy loading for route-based code splitting
+- Image optimization with next/image
+- Proper use of React.memo and useMemo
+- Bundle size monitoring
+- Lighthouse score targets: 90+ all categories
+
+### Testing Strategy
+- Jest for unit testing
+- React Testing Library for component testing
+- Cypress for E2E testing
+- Performance testing with Lighthouse CI
+- Accessibility testing with axe-core
+
+## Implementation Guidelines
+
+1. **Component Development**
+   - Use TypeScript for all components
+   - Implement proper prop typing
+   - Include component documentation
+   - Follow atomic design principles
+
+2. **State Management**
+   - Use React Context for global state
+   - Implement proper state isolation
+   - Follow immutability principles
+
+3. **API Integration**
+   - Centralized API service structure
+   - Proper error handling
+   - Request/response typing
+   - API documentation
+
+4. **Testing**
+   - Unit tests for utilities
+   - Component testing
+   - Integration testing
+   - E2E testing for critical flows
+
+## Structure Benefits
+
+1. **Scalability & Organization**
+   - Clear separation of concerns
+   - Modular architecture
+   - Easy to extend and maintain
+
+2. **Maintainability**
+   - Simplified debugging
+   - Enhanced collaboration
+   - Clear code ownership
+
+3. **Performance Optimization**
+   - Efficient code splitting
+   - Optimized loading
+   - Proper modularization
+
+4. **Security**
+   - Separated authentication logic
+   - Protected routes
+   - RBAC implementation
+   - Secure configuration management
