@@ -49,8 +49,8 @@ export default function LoginPage() {
         }
         router.refresh(); // Force a refresh to update the session
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during login');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred during login');
     } finally {
       setLoading(false);
     }

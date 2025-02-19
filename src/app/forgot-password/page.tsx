@@ -27,8 +27,8 @@ export default function ForgotPasswordPage() {
       if (error) throw error;
       
       setMessage('Check your email for the password reset link');
-    } catch (err: any) {
-      setError(err.message || 'An error occurred while requesting password reset');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred while requesting password reset');
     } finally {
       setLoading(false);
     }

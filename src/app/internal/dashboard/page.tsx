@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import type { User } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 
 interface UserData {
@@ -56,7 +55,7 @@ export default function InternalDashboard() {
     if (mounted) {
       getUser();
     }
-  }, [supabase.auth, router, mounted]);
+  }, [router, mounted, supabase]);
 
   if (!mounted) {
     return null;
