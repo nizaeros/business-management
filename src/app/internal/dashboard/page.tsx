@@ -4,10 +4,6 @@ import { useEffect, useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 
-interface UserData {
-  user_type: string;
-}
-
 export default function InternalDashboard() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userType, setUserType] = useState<string | null>(null);
@@ -38,7 +34,7 @@ export default function InternalDashboard() {
           .from('users')
           .select('user_type')
           .eq('id', user.id)
-          .single<UserData>();
+          .single();
           
         if (typeError) {
           throw typeError;
