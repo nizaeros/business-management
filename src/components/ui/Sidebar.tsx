@@ -20,22 +20,22 @@ const mainMenuItems = [
   {
     title: 'Home',
     icon: Home,
-    path: '/internal/dashboard'
+    href: '/internal/dashboard'
   },
   {
     title: 'Clients',
     icon: Briefcase,
-    path: '/internal/clients'
+    href: '/internal/clients'
   },
   {
-    title: 'Business',
+    title: 'Businesses',
     icon: Building2,
-    path: '/internal/businesses'
+    href: '/internal/businesses'
   },
   {
     title: 'Users',
     icon: Users,
-    path: '/internal/users'
+    href: '/internal/users'
   }
 ];
 
@@ -43,7 +43,7 @@ const adminMenuItems = [
   {
     title: 'Settings',
     icon: Settings,
-    path: '/internal/settings'
+    href: '/internal/settings'
   }
 ];
 
@@ -117,12 +117,12 @@ export default function Sidebar() {
 
   const renderMenuItems = (items: typeof mainMenuItems) => {
     return items.map((item) => {
-      const isActive = pathname === item.path;
+      const isActive = pathname === item.href;
 
       return (
         <Link
-          key={item.path}
-          href={item.path}
+          key={item.href}
+          href={item.href}
           className={`flex items-center px-2 py-1.5 rounded-lg mb-0.5 group transition-colors ${
             isActive
               ? 'bg-egyptian-blue/5 text-egyptian-blue'
