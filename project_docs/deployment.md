@@ -2,16 +2,28 @@
 
 ## Environment Setup
 
-1. **Environment Variables**
-   - Ensure all required environment variables are set in Vercel:
-     - `NEXT_PUBLIC_SUPABASE_URL`
-     - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-     - `SUPABASE_SERVICE_ROLE_KEY`
+### Local Development
+- Copy `.env.example` to `.env.local` and fill in your development environment variables
+- Never commit `.env.local` to git
 
-2. **Build Configuration**
-   - Build Command: `next build`
-   - Output Directory: `.next`
-   - Node.js Version: 18.x
+### Production (Vercel)
+Set the following environment variables in your Vercel project settings:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+### Environment Files Explained
+We use a simple environment setup:
+
+1. `.env.local` - Local development variables (git-ignored)
+2. `.env.example` - Template showing required variables (committed to git)
+
+We do NOT use:
+- `.env.production` - Not needed (use Vercel environment variables)
+- `.env.development` - Not needed (use .env.local)
+- Any other env files
+
+This keeps our setup clean and secure, with clear separation between local development and production environments.
 
 ## Common Issues and Solutions
 
