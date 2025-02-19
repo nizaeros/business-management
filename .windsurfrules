@@ -25,39 +25,41 @@ As a senior developer with 10+ years of experience, these guidelines are crafted
 
 ```bash
 business-management/
-├── public/               # Static assets (images, icons, etc.)
+├── public/                # Static assets
 ├── src/
-│   ├── app/             # App Router (Next.js 13+)
-│   │   ├── (auth)/      # Authentication routes
-│   │   ├── (internal)/  # Internal user routes
-│   │   └── (external)/  # External user routes
-│   ├── components/      # Reusable UI components
-│   │   ├── auth/        # Authentication components
-│   │   ├── dashboard/   # Dashboard components
-│   │   ├── services/    # Service-related components
-│   │   ├── ui/          # Basic UI components
-│   │   └── shared/      # Shared components
-│   ├── hooks/          # Custom hooks
-│   ├── lib/            # Utility functions & helpers
-│   │   ├── auth/       # Authentication utilities
-│   │   ├── rbac/       # RBAC implementation
-│   │   └── utils/      # General utilities
-│   ├── styles/         # Global styles (Tailwind CSS)
-│   ├── context/        # Global state management
-│   ├── services/       # API calls, external integrations
-│   ├── config/         # App configuration & environment
-│   ├── middleware/     # API & authentication middleware
-│   ├── store/          # State management (if needed)
-│   ├── types/          # TypeScript interfaces & types
-│   └── tests/          # Unit & integration tests
-├── project_docs/       # Project documentation
-├── supabase/          # Database migrations and types
-├── .env.local         # Environment variables
-├── next.config.js     # Next.js configuration
-├── package.json       # Dependencies & scripts
-├── tailwind.config.js # Tailwind CSS configuration
-└── tsconfig.json      # TypeScript configuration
-```
+│   ├── app/              # Next.js 13+ App Router
+│   │   ├── (auth)/       # Authentication routes
+│   │   │   ├── login/
+│   │   │   ├── forgot-password/
+│   │   │   ├── reset-password/
+│   │   │   └── layout.tsx
+│   │   ├── (internal)/   # Internal routes
+│   │   │   ├── dashboard/
+│   │   │   └── layout.tsx
+│   │   ├── (external)/   # External routes
+│   │   │   ├── dashboard/
+│   │   │   └── layout.tsx
+│   │   ├── layout.tsx    # Root layout
+│   │   └── globals.css   # Global styles
+│   ├── components/       # UI Components
+│   │   ├── ui/          # Primitive components (buttons, inputs)
+│   │   └── features/    # Feature-specific components
+│   ├── lib/             # Core utilities
+│   │   ├── supabase/    # Supabase client & utils
+│   │   └── utils/       # General utilities
+│   ├── types/           # TypeScript types
+│   │   ├── supabase.ts  # Database types
+│   │   └── common.ts    # Shared types
+│   ├── hooks/           # React hooks (create when needed)
+│   ├── context/         # React context (create when needed)
+│   ├── middleware.ts    # Next.js middleware
+│   └── styles/          # Component styles (if needed)
+├── supabase/            # Supabase configurations
+├── .env.local           # Environment variables
+├── next.config.ts       # Next.js configuration
+├── package.json         # Dependencies
+├── tailwind.config.js   # Tailwind configuration
+└── tsconfig.json        # TypeScript configuration
 
 ### ✅ Branding & UI/UX Standards with Senior-Level Implementation
 - **Primary Color**: Egyptian Blue (#1034A6)

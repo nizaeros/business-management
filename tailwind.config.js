@@ -6,8 +6,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#1034A6',    // Egyptian Blue
-        secondary: '#F3BE2B',  // Gold Yellow
+        'egyptian-blue': '#1034A6',
+        'gold-yellow': '#F3BE2B',
       },
     },
   },
