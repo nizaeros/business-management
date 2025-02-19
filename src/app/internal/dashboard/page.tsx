@@ -38,7 +38,7 @@ export default function InternalDashboard() {
           .from('users')
           .select('user_type')
           .eq('id', user.id)
-          .single();
+          .single<UserData>();
           
         if (typeError) {
           throw typeError;
