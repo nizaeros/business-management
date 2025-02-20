@@ -90,50 +90,49 @@ export default function BusinessesPage() {
   }, [router]);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Businesses</h1>
+    <div className="max-w-[1400px] mx-auto px-4 py-3 space-y-4 animate-fadeIn">
+      <div className="flex justify-between items-center gap-4">
+        <h1 className="text-lg font-semibold text-gray-900">Businesses</h1>
         <button
           onClick={() => router.push('/internal/businesses/create')}
-          className="bg-egyptian-blue text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-egyptian-blue/90"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-egyptian-blue hover:bg-egyptian-blue/90 rounded-md transition-colors"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-3.5 h-3.5" />
           Add Business
         </button>
       </div>
 
       <BusinessSearch onSearch={handleSearch} onFilter={handleFilter} />
 
-      {loading && page === 1 ? (
-        <div className="mt-8 text-center text-gray-600">Loading...</div>
-      ) : businesses.length === 0 ? (
-        <div className="mt-8 text-center text-gray-600">
-          No businesses found. Try adjusting your search or filters.
-        </div>
-      ) : (
-        <>
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {businesses.map((business) => (
-              <BusinessCard
-                key={business.id}
-                business={business}
-                onEdit={handleEdit}
-              />
-            ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <BusinessCard key={i} business={{} as Business} isLoading={true} />
+          ))
+        ) : businesses.length > 0 ? (
+          businesses.map((business) => (
+            <BusinessCard
+              key={business.id}
+              business={business}
+              onEdit={handleEdit}
+            />
+          ))
+        ) : (
+          <div className="col-span-full py-12 text-center bg-gray-50/50 rounded-lg border border-gray-100">
+            <p className="text-sm text-gray-600">No businesses found</p>
           </div>
+        )}
+      </div>
 
-          {hasMore && (
-            <div className="mt-8 text-center">
-              <button
-                onClick={handleLoadMore}
-                className="px-6 py-2 border border-egyptian-blue text-egyptian-blue rounded-lg hover:bg-egyptian-blue/10"
-                disabled={loading}
-              >
-                {loading ? 'Loading...' : 'Load More'}
-              </button>
-            </div>
-          )}
-        </>
+      {hasMore && !loading && (
+        <div className="text-center pt-4">
+          <button
+            onClick={handleLoadMore}
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium text-gray-700 bg-gray-50/50 border border-gray-200 rounded-md hover:bg-gray-100/50 transition-colors"
+          >
+            Load More
+          </button>
+        </div>
       )}
     </div>
   );

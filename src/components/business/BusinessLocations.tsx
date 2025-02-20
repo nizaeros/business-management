@@ -135,18 +135,19 @@ const BusinessLocations = ({
         is_primary: false
       });
       setIsAddingLocation(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string; details?: string; hint?: string; code?: string };
       console.error('Full error:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
+        message: err.message,
+        details: err.details,
+        hint: err.hint,
+        code: err.code,
         error
       });
       setError(
-        error.message || 
-        error.details || 
-        error.hint || 
+        err.message || 
+        err.details || 
+        err.hint || 
         'An error occurred while adding the location'
       );
     } finally {
@@ -155,18 +156,23 @@ const BusinessLocations = ({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Locations</h2>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-gray-900">Locations</h2>
         <button
-          type="button"
           onClick={() => setIsAddingLocation(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-egyptian-blue text-white rounded-lg hover:bg-egyptian-blue/90"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-egyptian-blue hover:bg-egyptian-blue/90 rounded-md transition-colors"
         >
           <Plus className="w-4 h-4" />
           Add Location
         </button>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+          {error}
+        </div>
+      )}
 
       {/* Locations List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

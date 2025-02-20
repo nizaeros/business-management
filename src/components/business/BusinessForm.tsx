@@ -91,6 +91,7 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
           });
 
         if (businessError) throw businessError;
+        console.log('New business created:', newBusiness);
       } else {
         // For existing business
         const { error } = await supabase
@@ -113,6 +114,10 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
   const handleBusinessTypeChange = (type: BusinessType) => {
     setFormData(prev => ({
       ...prev,
@@ -122,216 +127,219 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
     }));
   };
 
-  const renderBasicInfo = () => (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">Business Name *</label>
-        <input
-          type="text"
-          required
-          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-egyptian-blue focus:border-transparent"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">Registered Name</label>
-        <input
-          type="text"
-          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-egyptian-blue focus:border-transparent"
-          value={formData.registered_name}
-          onChange={(e) => setFormData({ ...formData, registered_name: e.target.value })}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">Business Code *</label>
-        <input
-          type="text"
-          required
-          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-egyptian-blue focus:border-transparent"
-          value={formData.business_code}
-          onChange={(e) => setFormData({ ...formData, business_code: e.target.value })}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">Business Type *</label>
-        <select
-          required
-          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-egyptian-blue focus:border-transparent"
-          value={formData.business_type}
-          onChange={(e) => handleBusinessTypeChange(e.target.value as BusinessType)}
-        >
-          <option value="headquarters">Headquarters</option>
-          <option value="branch">Branch</option>
-          <option value="franchise">Franchise</option>
-        </select>
-      </div>
-
-      {formData.business_type !== 'headquarters' && (
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Parent Business *</label>
-          <select
-            required
-            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-egyptian-blue focus:border-transparent"
-            value={formData.parent_business_id || ''}
-            onChange={(e) => setFormData({ ...formData, parent_business_id: e.target.value })}
-          >
-            <option value="">Select Parent Business</option>
-            {parentBusinesses.map((business) => (
-              <option key={business.id} value={business.id}>
-                {business.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderLocation = () => (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">Address Line 1 *</label>
-        <input
-          type="text"
-          required
-          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-egyptian-blue focus:border-transparent"
-          value={formData.address_line1}
-          onChange={(e) => setFormData({ ...formData, address_line1: e.target.value })}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">Address Line 2</label>
-        <input
-          type="text"
-          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-egyptian-blue focus:border-transparent"
-          value={formData.address_line2}
-          onChange={(e) => setFormData({ ...formData, address_line2: e.target.value })}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">City *</label>
-          <input
-            type="text"
-            required
-            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-egyptian-blue focus:border-transparent"
-            value={formData.city}
-            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">State/Province *</label>
-          <input
-            type="text"
-            required
-            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-egyptian-blue focus:border-transparent"
-            value={formData.state}
-            onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">Country *</label>
-        <input
-          type="text"
-          required
-          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-egyptian-blue focus:border-transparent"
-          value={formData.country}
-          onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-        />
-      </div>
-    </div>
-  );
-
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
-      <div className="mb-8 border-b border-gray-200">
-        <nav className="flex gap-8">
-          <button
-            type="button"
-            className={`pb-4 px-2 border-b-2 ${
-              currentStep === 'basic'
-                ? 'border-egyptian-blue text-egyptian-blue'
-                : 'border-transparent text-gray-500'
-            }`}
-            onClick={() => setCurrentStep('basic')}
-          >
-            <div className="flex items-center gap-2">
-              <Building2 className="w-5 h-5" />
-              <span>Basic Information</span>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            className={`pb-4 px-2 border-b-2 ${
-              currentStep === 'location'
-                ? 'border-egyptian-blue text-egyptian-blue'
-                : 'border-transparent text-gray-500'
-            }`}
-            onClick={() => setCurrentStep('location')}
-          >
-            <div className="flex items-center gap-2">
-              <MapPin className="w-5 h-5" />
-              <span>Primary Location</span>
-            </div>
-          </button>
-        </nav>
+    <div className="space-y-6">
+      {/* Progress Steps */}
+      <div className="flex gap-2 p-3 bg-gray-50/50 rounded-md border border-gray-200">
+        <button
+          onClick={() => setCurrentStep('basic')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            currentStep === 'basic'
+              ? 'bg-egyptian-blue text-white'
+              : 'text-gray-600 hover:bg-gray-100/50'
+          }`}
+        >
+          <Building2 className="w-3.5 h-3.5" />
+          Basic Info
+        </button>
+        <button
+          onClick={() => setCurrentStep('location')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            currentStep === 'location'
+              ? 'bg-egyptian-blue text-white'
+              : 'text-gray-600 hover:bg-gray-100/50'
+          }`}
+        >
+          <MapPin className="w-3.5 h-3.5" />
+          Location
+        </button>
       </div>
 
-      <div className="space-y-8">
-        {currentStep === 'basic' && renderBasicInfo()}
-        {currentStep === 'location' && renderLocation()}
+      {/* Form Content */}
+      <div className="bg-gray-50/50 rounded-md border border-gray-200">
+        <div className="p-4 space-y-4">
+          {currentStep === 'basic' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-700">Business Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
+                    placeholder="Enter business name"
+                  />
+                </div>
 
-        {error && (
-          <div className="p-4 bg-red-50 text-red-700 rounded-lg">
-            {error}
-          </div>
-        )}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-700">Registered Name</label>
+                  <input
+                    type="text"
+                    name="registered_name"
+                    value={formData.registered_name}
+                    onChange={handleChange}
+                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
+                    placeholder="Enter registered name"
+                  />
+                </div>
 
-        <div className="flex justify-between pt-6 border-t">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="px-6 py-2 text-gray-600 hover:text-gray-800"
-          >
-            Cancel
-          </button>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-700">Business Code</label>
+                  <input
+                    type="text"
+                    name="business_code"
+                    value={formData.business_code}
+                    onChange={handleChange}
+                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
+                    placeholder="Enter business code"
+                  />
+                </div>
 
-          <div className="flex gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-700">Business Type</label>
+                  <select
+                    name="business_type"
+                    value={formData.business_type}
+                    onChange={(e) => handleBusinessTypeChange(e.target.value as BusinessType)}
+                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
+                  >
+                    <option value="headquarters">Headquarters</option>
+                    <option value="branch">Branch</option>
+                    <option value="franchise">Franchise</option>
+                  </select>
+                </div>
+
+                {formData.business_type !== 'headquarters' && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-gray-700">Parent Business</label>
+                    <select
+                      name="parent_business_id"
+                      value={formData.parent_business_id}
+                      onChange={handleChange}
+                      className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
+                    >
+                      <option value="">Select parent business</option>
+                      {parentBusinesses.map((business) => (
+                        <option key={business.id} value={business.id}>
+                          {business.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-700">Status</label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="suspended">Suspended</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {currentStep === 'location' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-700">Address Line 1</label>
+                  <input
+                    type="text"
+                    name="address_line1"
+                    value={formData.address_line1}
+                    onChange={handleChange}
+                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
+                    placeholder="Enter address line 1"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-700">Address Line 2</label>
+                  <input
+                    type="text"
+                    name="address_line2"
+                    value={formData.address_line2}
+                    onChange={handleChange}
+                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
+                    placeholder="Enter address line 2"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-700">City</label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
+                    placeholder="Enter city"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-700">State</label>
+                  <input
+                    type="text"
+                    name="state"
+                    value={formData.state}
+                    onChange={handleChange}
+                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
+                    placeholder="Enter state"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-700">Country</label>
+                  <input
+                    type="text"
+                    name="country"
+                    value={formData.country}
+                    onChange={handleChange}
+                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
+                    placeholder="Enter country"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50/50">
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <div className="flex gap-2 ml-auto">
             {currentStep === 'location' && (
               <button
                 type="button"
                 onClick={() => setCurrentStep('basic')}
-                className="px-6 py-2 border border-egyptian-blue text-egyptian-blue rounded-lg hover:bg-egyptian-blue/10"
+                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
               >
-                Previous
+                Back
               </button>
             )}
-
-            {currentStep === 'basic' && (
+            {currentStep === 'basic' ? (
               <button
                 type="button"
                 onClick={() => setCurrentStep('location')}
-                className="px-6 py-2 bg-egyptian-blue text-white rounded-lg hover:bg-egyptian-blue/90"
+                className="px-3 py-1.5 text-xs font-medium text-white bg-egyptian-blue hover:bg-egyptian-blue/90 rounded-md transition-colors"
               >
                 Next
               </button>
-            )}
-
-            {currentStep === 'location' && (
+            ) : (
               <button
-                type="submit"
+                type="button"
+                onClick={handleSubmit}
                 disabled={loading}
-                className="px-6 py-2 bg-egyptian-blue text-white rounded-lg hover:bg-egyptian-blue/90 disabled:opacity-50"
+                className="px-3 py-1.5 text-xs font-medium text-white bg-egyptian-blue hover:bg-egyptian-blue/90 rounded-md transition-colors disabled:opacity-50"
               >
                 {loading ? 'Saving...' : 'Save Business'}
               </button>
@@ -339,6 +347,6 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
           </div>
         </div>
       </div>
-    </form>
+    </div>
   );
 }
