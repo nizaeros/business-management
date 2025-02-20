@@ -11,7 +11,14 @@ interface BusinessFormProps {
   initialData?: Partial<Business>;
 }
 
-type FormStep = 'basic' | 'location' | 'contacts';
+type FormStep = 'basic' | 'location';
+
+const BUSINESS_TYPES = [
+  { value: 'global_headquarters', label: 'Global Headquarters' },
+  { value: 'regional_headquarters', label: 'Regional Headquarters' },
+  { value: 'branch', label: 'Branch' },
+  { value: 'franchise', label: 'Franchise' }
+] as const;
 
 export function BusinessForm({ initialData }: BusinessFormProps) {
   const router = useRouter();
@@ -23,6 +30,7 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
     registered_name: initialData?.registered_name || '',
     business_code: initialData?.business_code || '',
     business_type: initialData?.business_type || 'branch' as BusinessType,
+    has_parent: initialData?.has_parent || false,
     parent_business_id: initialData?.parent_business_id || '',
     status: initialData?.status || 'active',
     // Location fields
@@ -30,30 +38,111 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
     address_line2: initialData?.address_line2 || '',
     city: initialData?.city || '',
     state: initialData?.state || '',
-    country: initialData?.country || '',
+    country: initialData?.country || ''
   });
 
   const [parentBusinesses, setParentBusinesses] = useState<Business[]>([]);
   const [error, setError] = useState('');
 
-  // Load potential parent businesses
+  // Load potential parent businesses based on selected business type
   const loadParentBusinesses = useCallback(async () => {
-    const { data, error } = await supabase
+    if (!formData.has_parent) {
+      console.log('Not loading parent businesses - has_parent is false');
+      setParentBusinesses([]);
+      return;
+    }
+
+    console.log('Loading parent businesses for type:', formData.business_type);
+    
+    let query = supabase
       .from('businesses')
-      .select('*')
-      .eq('business_type', 'headquarters');
+      .select(`
+        id,
+        name,
+        registered_name,
+        business_code,
+        business_type,
+        parent_business_id,
+        status,
+        logo_url,
+        created_at,
+        created_by,
+        updated_at,
+        updated_by,
+        address_line1,
+        address_line2,
+        city,
+        state,
+        country,
+        business_locations!inner (
+          id,
+          name,
+          address_line1,
+          address_line2,
+          city,
+          state,
+          country,
+          postal_code,
+          phone,
+          email,
+          is_primary,
+          coordinates,
+          operating_hours,
+          status,
+          created_at,
+          created_by,
+          updated_at,
+          updated_by
+        )
+      `)
+      .eq('status', 'active')
+      .eq('business_locations.is_primary', true);
+    
+    // Filter parent businesses based on business type
+    if (formData.business_type === 'regional_headquarters') {
+      query = query.eq('business_type', 'global_headquarters');
+    } else if (['branch', 'franchise'].includes(formData.business_type)) {
+      query = query.in('business_type', ['global_headquarters', 'regional_headquarters']);
+    }
+    
+    const { data, error } = await query;
     
     if (error) {
       console.error('Error loading parent businesses:', error);
+      setError(`Error loading parent businesses: ${error.message}`);
       return;
     }
     
-    setParentBusinesses(data);
-  }, [supabase]);
+    // Transform the data to match the Business interface
+    const transformedData = (data || []).map(business => ({
+      ...business,
+      // Ensure has_parent is derived from parent_business_id
+      has_parent: business.parent_business_id !== null
+    })) as Business[];
+    
+    console.log('Loaded parent businesses:', transformedData);
+    setParentBusinesses(transformedData);
+  }, [supabase, formData.business_type, formData.has_parent]);
 
   useEffect(() => {
     loadParentBusinesses();
   }, [loadParentBusinesses]);
+
+  // Reset parent selection when business type changes
+  useEffect(() => {
+    if (formData.business_type === 'global_headquarters') {
+      setFormData(prev => ({
+        ...prev,
+        has_parent: false,
+        parent_business_id: ''
+      }));
+    }
+  }, [formData.business_type]);
+
+  useEffect(() => {
+    console.log('has_parent changed:', formData.has_parent);
+    loadParentBusinesses();
+  }, [formData.has_parent, loadParentBusinesses]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,12 +150,25 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
     setError('');
 
     try {
+      // Remove UI-only fields and handle parent_business_id
+      const { has_parent, ...dataToSubmit } = formData;
+      
+      // Ensure business_type is one of the allowed values
+      if (!['global_headquarters', 'regional_headquarters', 'branch', 'franchise'].includes(dataToSubmit.business_type)) {
+        throw new Error('Invalid business type');
+      }
+
       const submitData = {
-        ...formData,
+        ...dataToSubmit,
         slug: formData.business_code.toLowerCase(),
-        // Convert empty string to null for database
-        parent_business_id: formData.business_type === 'headquarters' ? null : (formData.parent_business_id || null),
+        // Only include parent_business_id if it has a value
+        parent_business_id: formData.parent_business_id || null,
+        // Ensure these fields are properly set
+        business_type: dataToSubmit.business_type,
+        status: dataToSubmit.status || 'active'
       };
+
+      console.log('Submitting business data:', submitData);
 
       // For new business
       if (!initialData?.id) {
@@ -85,13 +187,18 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
               state: formData.state,
               country: formData.country,
               is_primary: true,
+              status: 'active',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             }
           });
 
-        if (businessError) throw businessError;
+        if (businessError) {
+          console.error('Error details:', businessError);
+          throw businessError;
+        }
         console.log('New business created:', newBusiness);
+        router.push('/internal/businesses');
       } else {
         // For existing business
         const { error } = await supabase
@@ -100,22 +207,21 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
           .eq('id', initialData.id);
 
         if (error) throw error;
+        router.push('/internal/businesses');
       }
-
-      router.push('/internal/businesses');
-    } catch (error) {
-      if (error instanceof Error || 'message' in (error as object)) {
-        setError((error as Error | PostgrestError).message);
-      } else {
-        setError('An unexpected error occurred');
-      }
+    } catch (err) {
+      const error = err as PostgrestError;
+      setError(`Error creating business: ${error.message}`);
+      console.error('Error:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
+    console.log('Form field changed:', e.target.name, value);
+    setFormData(prev => ({ ...prev, [e.target.name]: value }));
   };
 
   const handleBusinessTypeChange = (type: BusinessType) => {
@@ -123,230 +229,305 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
       ...prev,
       business_type: type,
       // Reset parent_business_id when switching to headquarters
-      parent_business_id: type === 'headquarters' ? '' : prev.parent_business_id
+      parent_business_id: type === 'global_headquarters' ? '' : prev.parent_business_id
     }));
   };
 
   return (
-    <div className="space-y-6">
-      {/* Progress Steps */}
-      <div className="flex gap-2 p-3 bg-gray-50/50 rounded-md border border-gray-200">
-        <button
-          onClick={() => setCurrentStep('basic')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-            currentStep === 'basic'
-              ? 'bg-egyptian-blue text-white'
-              : 'text-gray-600 hover:bg-gray-100/50'
-          }`}
-        >
-          <Building2 className="w-3.5 h-3.5" />
-          Basic Info
-        </button>
-        <button
-          onClick={() => setCurrentStep('location')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-            currentStep === 'location'
-              ? 'bg-egyptian-blue text-white'
-              : 'text-gray-600 hover:bg-gray-100/50'
-          }`}
-        >
-          <MapPin className="w-3.5 h-3.5" />
-          Location
-        </button>
+    <div className="max-w-4xl mx-auto bg-white shadow-sm rounded-lg">
+      {/* Form Header */}
+      <div className="px-6 py-4 border-b border-gray-200">
+        <h2 className="text-xl font-semibold text-gray-800">
+          {initialData ? 'Edit Business' : 'Create New Business'}
+        </h2>
+      </div>
+
+      {/* Form Navigation Tabs */}
+      <div className="px-6 border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+          <button
+            type="button"
+            onClick={() => setCurrentStep('basic')}
+            className={`${
+              currentStep === 'basic'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+            } whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium flex items-center space-x-2`}
+          >
+            <Building2 className="h-5 w-5" />
+            <span>Basic Info</span>
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => setCurrentStep('location')}
+            className={`${
+              currentStep === 'location'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+            } whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium flex items-center space-x-2`}
+          >
+            <MapPin className="h-5 w-5" />
+            <span>Location</span>
+          </button>
+        </nav>
       </div>
 
       {/* Form Content */}
-      <div className="bg-gray-50/50 rounded-md border border-gray-200">
-        <div className="p-4 space-y-4">
+      <form onSubmit={handleSubmit}>
+        <div className="px-6 py-6 space-y-6">
+          {/* Basic Information */}
           {currentStep === 'basic' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-700">Business Name</label>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Business Name</label>
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
-                    placeholder="Enter business name"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                    required
                   />
                 </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-700">Registered Name</label>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Registered Name</label>
                   <input
                     type="text"
                     name="registered_name"
                     value={formData.registered_name}
                     onChange={handleChange}
-                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
-                    placeholder="Enter registered name"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-700">Business Code</label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Business Code</label>
                   <input
                     type="text"
                     name="business_code"
                     value={formData.business_code}
                     onChange={handleChange}
-                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
-                    placeholder="Enter business code"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                    required
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-700">Business Type</label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Business Type</label>
                   <select
                     name="business_type"
                     value={formData.business_type}
                     onChange={(e) => handleBusinessTypeChange(e.target.value as BusinessType)}
-                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                    required
                   >
-                    <option value="headquarters">Headquarters</option>
-                    <option value="branch">Branch</option>
-                    <option value="franchise">Franchise</option>
+                    {BUSINESS_TYPES.map(type => (
+                      <option key={type.value} value={type.value}>{type.label}</option>
+                    ))}
                   </select>
                 </div>
 
-                {formData.business_type !== 'headquarters' && (
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-gray-700">Parent Business</label>
-                    <select
-                      name="parent_business_id"
-                      value={formData.parent_business_id}
-                      onChange={handleChange}
-                      className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
-                    >
-                      <option value="">Select parent business</option>
-                      {parentBusinesses.map((business) => (
-                        <option key={business.id} value={business.id}>
-                          {business.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-700">Status</label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Status</label>
                   <select
                     name="status"
                     value={formData.status}
                     onChange={handleChange}
-                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                    required
                   >
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                     <option value="suspended">Suspended</option>
                   </select>
                 </div>
+
+                {formData.business_type !== 'global_headquarters' && (
+                  <div className="col-span-2 space-y-4">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="has_parent"
+                        name="has_parent"
+                        checked={formData.has_parent}
+                        onChange={handleChange}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <label htmlFor="has_parent" className="ml-2 block text-sm text-gray-700">
+                        Has Parent Business
+                      </label>
+                    </div>
+
+                    {formData.has_parent && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Parent Business</label>
+                        <select
+                          name="parent_business_id"
+                          value={formData.parent_business_id}
+                          onChange={handleChange}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                          required={formData.has_parent}
+                        >
+                          <option value="">Select Parent Business</option>
+                          {parentBusinesses.map(business => {
+                            const primaryLocation = business.business_locations?.[0];
+                            const locationInfo = primaryLocation
+                              ? `${primaryLocation.city}, ${primaryLocation.state}, ${primaryLocation.country}`
+                              : 'No location';
+                            
+                            return (
+                              <option key={business.id} value={business.id}>
+                                {business.name} - {business.business_type.replace('_', ' ')} ({locationInfo})
+                              </option>
+                            );
+                          })}
+                        </select>
+                        <p className="mt-1 text-xs text-gray-500">
+                          {parentBusinesses.length === 0 
+                            ? 'No available parent businesses found.' 
+                            : 'Select a parent business from the list. The business type and location are shown for better identification.'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
 
+          {/* Location Information */}
           {currentStep === 'location' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-700">Address Line 1</label>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Address Line 1</label>
                   <input
                     type="text"
                     name="address_line1"
                     value={formData.address_line1}
                     onChange={handleChange}
-                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
-                    placeholder="Enter address line 1"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                    required
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-700">Address Line 2</label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Address Line 2</label>
                   <input
                     type="text"
                     name="address_line2"
                     value={formData.address_line2}
                     onChange={handleChange}
-                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
-                    placeholder="Enter address line 2"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-700">City</label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">City</label>
                   <input
                     type="text"
                     name="city"
                     value={formData.city}
                     onChange={handleChange}
-                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
-                    placeholder="Enter city"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                    required
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-700">State</label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">State</label>
                   <input
                     type="text"
                     name="state"
                     value={formData.state}
                     onChange={handleChange}
-                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
-                    placeholder="Enter state"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                    required
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-700">Country</label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Country</label>
                   <input
                     type="text"
                     name="country"
                     value={formData.country}
                     onChange={handleChange}
-                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-egyptian-blue focus:border-egyptian-blue"
-                    placeholder="Enter country"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                    required
                   />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Error Display */}
+          {error && (
+            <div className="rounded-md bg-red-50 p-4 mt-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50/50">
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <div className="flex gap-2 ml-auto">
-            {currentStep === 'location' && (
-              <button
-                type="button"
-                onClick={() => setCurrentStep('basic')}
-                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Back
-              </button>
-            )}
-            {currentStep === 'basic' ? (
-              <button
-                type="button"
-                onClick={() => setCurrentStep('location')}
-                className="px-3 py-1.5 text-xs font-medium text-white bg-egyptian-blue hover:bg-egyptian-blue/90 rounded-md transition-colors"
-              >
-                Next
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={loading}
-                className="px-3 py-1.5 text-xs font-medium text-white bg-egyptian-blue hover:bg-egyptian-blue/90 rounded-md transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Saving...' : 'Save Business'}
-              </button>
-            )}
+        {/* Form Actions */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+          <div className="flex justify-between items-center">
+            {/* Left side buttons */}
+            <button
+              type="button"
+              onClick={() => router.push('/internal/businesses')}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            >
+              Cancel
+            </button>
+
+            {/* Right side buttons */}
+            <div className="flex space-x-4">
+              {currentStep === 'location' && (
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep('basic')}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                >
+                  Previous
+                </button>
+              )}
+              
+              {currentStep === 'basic' && (
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep('location')}
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#1034A6] border border-transparent rounded-md shadow-sm hover:bg-[#0d2b8b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1034A6]"
+                >
+                  Next
+                </button>
+              )}
+              
+              {currentStep === 'location' && (
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#1034A6] border border-transparent rounded-md shadow-sm hover:bg-[#0d2b8b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1034A6] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Saving...' : 'Save Business'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

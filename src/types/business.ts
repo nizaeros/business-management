@@ -1,4 +1,4 @@
-export type BusinessType = 'headquarters' | 'branch' | 'franchise';
+export type BusinessType = 'global_headquarters' | 'regional_headquarters' | 'branch' | 'franchise';
 export type BusinessStatus = 'active' | 'inactive' | 'suspended';
 export type LocationStatus = 'active' | 'inactive' | 'temporarily_closed';
 
@@ -7,20 +7,23 @@ export interface Business {
   name: string;
   registered_name: string | null;
   business_code: string;
-  logo_url: string | null;
-  city: string | null;
-  state: string | null;
-  country: string | null;
-  address_line1: string | null;
-  address_line2: string | null;
-  slug: string;
+  business_type: BusinessType;
+  has_parent: boolean;
   parent_business_id: string | null;
-  business_type: BusinessType | null;
   status: BusinessStatus;
+  logo_url?: string | null;
   created_at: string;
   created_by: string;
   updated_at: string;
   updated_by: string;
+  // Location fields
+  address_line1: string;
+  address_line2: string | null;
+  city: string;
+  state: string;
+  country: string;
+  // Relationships
+  business_locations?: BusinessLocation[];
 }
 
 export interface BusinessLocation {

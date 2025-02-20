@@ -123,6 +123,16 @@ export default async function BusinessDetailsPage({ params }: PageProps) {
               </div>
             </div>
           </div>
+
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/internal/businesses/${business.id}/edit`}
+              className="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium text-egyptian-blue 
+                bg-egyptian-blue/5 hover:bg-egyptian-blue/10 rounded-lg transition-colors"
+            >
+              Edit Business
+            </Link>
+          </div>
         </div>
       </div>
 

@@ -9,8 +9,9 @@ Implementation of a comprehensive business management system that supports multi
 -- Extend existing businesses table
 ALTER TABLE public.businesses
 ADD COLUMN parent_business_id uuid REFERENCES public.businesses(id),
-ADD COLUMN business_type text CHECK (business_type IN ('headquarters', 'branch', 'franchise')),
-ADD COLUMN status text CHECK (status IN ('active', 'inactive', 'suspended')) DEFAULT 'active';
+ADD COLUMN business_type text CHECK (business_type IN ('global_headquarters', 'regional_headquarters', 'branch', 'franchise')),
+ADD COLUMN status text CHECK (status IN ('active', 'inactive', 'suspended')) DEFAULT 'active',
+ADD COLUMN has_parent boolean DEFAULT false;
 
 -- Create business locations table
 CREATE TABLE public.business_locations (
@@ -63,6 +64,7 @@ CREATE TABLE public.business_contacts (
 /app/(internal)/businesses/[id]/edit
 /app/(internal)/businesses/[id]/locations
 /app/(internal)/businesses/[id]/contacts
+/app/(internal)/businesses/[id]/hierarchy
 ```
 
 ### 2. Components
@@ -82,6 +84,7 @@ components/business/ContactForm
 components/business/LocationList
 components/business/ContactList
 components/business/BusinessHierarchy
+components/business/HierarchyTree
 ```
 
 ### 3. API Routes
@@ -92,6 +95,7 @@ components/business/BusinessHierarchy
 /api/businesses/search
 /api/businesses/[id]/locations
 /api/businesses/[id]/contacts
+/api/businesses/[id]/hierarchy
 ```
 
 ## Feature Requirements
@@ -127,8 +131,13 @@ components/business/BusinessHierarchy
 - Multi-step form process:
   1. Basic Information
      - Business name and code
-     - Type selection
-     - Parent business (for non-headquarters)
+     - Type selection (global_headquarters, regional_headquarters, branch, franchise)
+     - Has Parent checkbox
+       - When checked, shows parent business selector
+       - Parent selection is filtered based on business type:
+         - Global HQ: Cannot have parent
+         - Regional HQ: Can only select Global HQ as parent
+         - Branch/Franchise: Can select either Regional or Global HQ
      - Status selection
   2. Location Details
      - Address information
@@ -138,13 +147,33 @@ components/business/BusinessHierarchy
   - Step navigation
   - Validation feedback
   - Responsive grid layout
+  - Dynamic parent selection based on business type
+  - Clear hierarchy visualization
 - Enterprise styling:
   - Consistent input design
   - Clear section separation
   - Professional typography
   - Proper spacing hierarchy
 
-### 4. Design System Implementation 
+### 4. Business Hierarchy
+- Support for complex business structures:
+  1. Global Headquarters
+     - Top-level business entity
+     - Cannot have a parent
+     - Can have multiple regional HQs and branches
+  2. Regional Headquarters
+     - Must have a Global HQ as parent
+     - Can have multiple branches
+  3. Branch/Franchise
+     - Can have either Regional or Global HQ as parent
+     - Represents operational business units
+- Hierarchy Visualization:
+  - Tree view of business relationships
+  - Clear indication of business types
+  - Easy navigation between related businesses
+  - Status indicators at each level
+
+### 5. Design System Implementation 
 - Core Design Elements:
   - Background: White (#FFFFFF)
   - Interactive Elements: bg-gray-50/50
@@ -169,7 +198,7 @@ components/business/BusinessHierarchy
   - Transitions
   - Validation feedback
 
-### 5. Accessibility
+### 6. Accessibility
 - WCAG 2.1 AA compliance
 - Semantic HTML structure
 - Proper contrast ratios
@@ -194,11 +223,11 @@ components/business/BusinessHierarchy
 - Dark mode support
 - Additional micro-interactions
 - Design token documentation
+- Business hierarchy visualization
 
 ⏳ Pending:
 - Business locations management
 - Contact management
-- Business hierarchy visualization
 - Advanced search features
 - Export functionality
 
@@ -215,6 +244,7 @@ components/business/BusinessHierarchy
 - Search functionality
 - Filter system
 - Location management
+- Hierarchy visualization
 
 ### 3. E2E Tests
 - Business creation flow

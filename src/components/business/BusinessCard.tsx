@@ -2,18 +2,19 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Building2, MapPin, Users, MapPinned, Edit } from 'lucide-react';
+import { useState } from 'react';
+import { Building2, MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Business } from '@/types/business';
 
 interface BusinessCardProps {
   business: Business;
-  onEdit?: (business: Business) => void;
   isLoading?: boolean;
 }
 
-export function BusinessCard({ business, onEdit, isLoading = false }: BusinessCardProps) {
+export function BusinessCard({ business, isLoading = false }: BusinessCardProps) {
   const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
 
   if (isLoading) {
     return (
@@ -38,9 +39,8 @@ export function BusinessCard({ business, onEdit, isLoading = false }: BusinessCa
     pending: 'bg-yellow-50 text-yellow-700 border-yellow-100'
   };
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Only navigate if the click target is the card itself or its main content
-    if ((e.target as HTMLElement).closest('button, a')) return;
+  const handleCardClick = () => {
+    setIsNavigating(true);
     router.push(`/internal/businesses/${business.id}`);
   };
 
@@ -51,18 +51,18 @@ export function BusinessCard({ business, onEdit, isLoading = false }: BusinessCa
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          router.push(`/internal/businesses/${business.id}`);
+          handleCardClick();
         }
       }}
       role="article"
       aria-label={`Business card for ${business.name}`}
       className="group cursor-pointer hover:scale-[1.01] transition-transform duration-200"
     >
-      <CardContent className="p-4 flex flex-col min-h-[120px]">
+      <CardContent className="p-5 flex flex-col min-h-[140px]">
         <div className="flex-1">
-          <div className="flex items-start gap-3">
-            <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-gray-50 flex-shrink-0 
-              border border-gray-100 group-hover:border-egyptian-blue/20 transition-colors"
+          <div className="flex items-start gap-4">
+            <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-gray-50 flex-shrink-0 
+              border border-gray-100 group-hover:border-egyptian-blue/20 transition-colors shadow-sm"
             >
               {business.logo_url ? (
                 <Image
@@ -80,26 +80,26 @@ export function BusinessCard({ business, onEdit, isLoading = false }: BusinessCa
             </div>
             
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-medium text-gray-900 truncate 
+              <div className="flex items-center justify-between gap-4">
+                <h3 className="text-base font-semibold text-gray-900 truncate 
                   group-hover:text-egyptian-blue transition-colors"
                 >
                   {business.name}
                 </h3>
-                <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${statusColors[business.status as keyof typeof statusColors]}`}>
+                <span className={`px-2.5 py-1 text-xs font-medium rounded-full border ${statusColors[business.status as keyof typeof statusColors]}`}>
                   {business.status.charAt(0).toUpperCase() + business.status.slice(1)}
                 </span>
               </div>
               
               {business.business_code && (
-                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
-                  <span className="font-medium">Code:</span> {business.business_code}
+                <p className="text-xs text-gray-500 mt-2 flex items-center gap-1.5">
+                  <span className="font-medium px-1.5 py-0.5 bg-gray-50 rounded">Code:</span> {business.business_code}
                 </p>
               )}
               
               {(business.city || business.state || business.country) && (
-                <div className="flex items-center gap-1.5 mt-1.5 text-xs text-gray-600">
-                  <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                <div className="flex items-center gap-2 mt-2.5 text-xs text-gray-600">
+                  <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <span className="truncate">
                     {[business.city, business.state, business.country]
                       .filter(Boolean)
@@ -109,44 +109,6 @@ export function BusinessCard({ business, onEdit, isLoading = false }: BusinessCa
               )}
             </div>
           </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2 border-t border-gray-100 mt-4 pt-4">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/internal/businesses/${business.id}/locations`);
-            }}
-            className="flex items-center justify-center gap-1.5 px-2 py-1 text-xs text-gray-600 
-              hover:text-egyptian-blue hover:bg-egyptian-blue/5 rounded transition-colors"
-          >
-            <MapPinned className="w-3.5 h-3.5" />
-            <span>Locations</span>
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/internal/businesses/${business.id}/contacts`);
-            }}
-            className="flex items-center justify-center gap-1.5 px-2 py-1 text-xs text-gray-600 
-              hover:text-egyptian-blue hover:bg-egyptian-blue/5 rounded transition-colors"
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>Contacts</span>
-          </button>
-          {onEdit && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(business);
-              }}
-              className="flex items-center justify-center gap-1.5 px-2 py-1 text-xs text-gray-600 
-                hover:text-egyptian-blue hover:bg-egyptian-blue/5 rounded transition-colors"
-            >
-              <Edit className="w-3.5 h-3.5" />
-              <span>Edit</span>
-            </button>
-          )}
         </div>
       </CardContent>
     </Card>
