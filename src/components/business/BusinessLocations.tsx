@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { MapPin, Plus, X } from 'lucide-react';
 import { Business, BusinessLocation } from '@/types/business';
@@ -33,25 +33,9 @@ const BusinessLocations = ({
     is_primary: false
   });
 
-  useEffect(() => {
-    async function getUserType() {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: userData, error } = await supabase
-        .from('users')
-        .select('user_type')
-        .eq('id', user?.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user type:', error);
-        return;
-      }
-
-      console.log('Current user type:', userData?.user_type);
-    }
-
-    getUserType();
-  }, [supabase]);
+  const handleEditLocation = (location: BusinessLocation) => {
+    console.log('Edit location:', location);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,34 +43,11 @@ const BusinessLocations = ({
     setError(null);
 
     try {
-      // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
-      if (userError) {
-        console.error('User error:', userError);
-        throw new Error('Failed to get current user');
+      if (userError || !user) {
+        throw new Error('Authentication required');
       }
-
-      if (!user) {
-        throw new Error('No authenticated user found');
-      }
-
-      // Get user type
-      const { data: userData, error: userDataError } = await supabase
-        .from('users')
-        .select('user_type')
-        .eq('id', user.id)
-        .single();
-
-      if (userDataError) {
-        console.error('User data error:', userDataError);
-        throw new Error('Failed to get user data');
-      }
-
-      console.log('Current user:', {
-        id: user.id,
-        userType: userData?.user_type,
-      });
 
       // Prepare location data
       const locationData = {
@@ -94,34 +55,40 @@ const BusinessLocations = ({
         business_id: business.id,
         created_by: user.id,
         updated_by: user.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
         status: 'active' as const
       };
 
-      console.log('Inserting location data:', locationData);
+      // If this is the first location or marked as primary, ensure it's set as primary
+      if (locations.length === 0 || locationData.is_primary) {
+        // If setting this as primary, update all other locations to non-primary
+        if (locations.length > 0) {
+          const { error: updateError } = await supabase
+            .from('business_locations')
+            .update({ is_primary: false })
+            .eq('business_id', business.id);
 
-      const { data: insertedLocation, error: locationError } = await supabase
+          if (updateError) {
+            throw new Error('Failed to update primary location status');
+          }
+        }
+      }
+
+      // Insert the new location
+      const { data, error: insertError } = await supabase
         .from('business_locations')
         .insert(locationData)
         .select()
         .single();
 
-      if (locationError) {
-        console.error('Location insert error:', locationError);
-        throw new Error(`Failed to add location: ${locationError.message}`);
+      if (insertError) {
+        throw new Error('Failed to add location');
       }
 
-      if (!insertedLocation) {
-        throw new Error('No location data returned after insert');
-      }
-
-      console.log('Successfully inserted location:', insertedLocation);
-
-      // Update locations state
-      setLocations(prev => [...prev, insertedLocation]);
-
-      // Reset form and close modal
+      // Update local state
+      setLocations(prev => [...prev, data]);
+      setIsAddingLocation(false);
+      
+      // Reset form
       setNewLocation({
         name: '',
         address_line1: '',
@@ -134,22 +101,8 @@ const BusinessLocations = ({
         email: '',
         is_primary: false
       });
-      setIsAddingLocation(false);
-    } catch (error: unknown) {
-      const err = error as { message?: string; details?: string; hint?: string; code?: string };
-      console.error('Full error:', {
-        message: err.message,
-        details: err.details,
-        hint: err.hint,
-        code: err.code,
-        error
-      });
-      setError(
-        err.message || 
-        err.details || 
-        err.hint || 
-        'An error occurred while adding the location'
-      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -158,230 +111,200 @@ const BusinessLocations = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">Locations</h2>
+        <h2 className="text-base font-semibold text-gray-900">Locations</h2>
         <button
           onClick={() => setIsAddingLocation(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-egyptian-blue hover:bg-egyptian-blue/90 rounded-md transition-colors"
+          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-egyptian-blue 
+            bg-egyptian-blue/5 hover:bg-egyptian-blue/10 rounded-lg transition-colors"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           Add Location
         </button>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-          {error}
-        </div>
-      )}
-
-      {/* Locations List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {locations.map((location) => (
           <div
             key={location.id}
-            className="p-4 border border-gray-200 rounded-lg hover:border-egyptian-blue/30 transition-colors"
+            className="relative bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:border-egyptian-blue/20 transition-colors"
           >
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-2">
-                <MapPin className="w-5 h-5 text-egyptian-blue mt-1" />
-                <div>
-                  <h3 className="font-medium">{location.name}</h3>
-                  <p className="text-sm text-gray-600">
-                    {location.address_line1}
-                    {location.address_line2 && <>, {location.address_line2}</>}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {location.city}, {location.state}
-                  </p>
-                  <p className="text-sm text-gray-600">{location.country}</p>
-                </div>
+            {location.is_primary && (
+              <span className="absolute top-2 right-2 px-2 py-0.5 text-[11px] font-medium bg-egyptian-blue/5 
+                text-egyptian-blue rounded-full">
+                Primary
+              </span>
+            )}
+            
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-sm font-medium text-gray-900">{location.name}</h3>
+                <p className="mt-1 text-xs text-gray-500">
+                  {[
+                    location.address_line1,
+                    location.address_line2,
+                    location.city,
+                    location.state,
+                    location.postal_code,
+                    location.country,
+                  ]
+                    .filter(Boolean)
+                    .join(', ')}
+                </p>
               </div>
-              {location.is_primary && (
-                <span className="px-2 py-1 text-xs bg-egyptian-blue/10 text-egyptian-blue rounded">
-                  Primary
-                </span>
-              )}
+
+              <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                <div className="flex items-center gap-2">
+                  {location.phone && (
+                    <span className="text-xs text-gray-500">
+                      {location.phone}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleEditLocation(location)}
+                  className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 text-xs text-gray-600 
+                    hover:text-egyptian-blue hover:bg-egyptian-blue/5 rounded transition-colors"
+                >
+                  Edit
+                </button>
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Add Location Modal */}
       {isAddingLocation && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Add New Location</h3>
               <button
-                type="button"
                 onClick={() => setIsAddingLocation(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-400 hover:text-gray-600"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {error && (
-              <div className="mb-4 p-2 bg-red-50 text-red-600 rounded">
-                {error}
-              </div>
-            )}
-
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Location Name *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700">Name</label>
                   <input
                     type="text"
-                    required
-                    className="mt-1 w-full p-2 border border-gray-300 rounded"
                     value={newLocation.name}
-                    onChange={(e) =>
-                      setNewLocation({ ...newLocation, name: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Address Line 1 *
-                  </label>
-                  <input
-                    type="text"
+                    onChange={(e) => setNewLocation({ ...newLocation, name: e.target.value })}
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                     required
-                    className="mt-1 w-full p-2 border border-gray-300 rounded"
-                    value={newLocation.address_line1}
-                    onChange={(e) =>
-                      setNewLocation({
-                        ...newLocation,
-                        address_line1: e.target.value,
-                      })
-                    }
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Address Line 2
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700">Phone</label>
                   <input
-                    type="text"
-                    className="mt-1 w-full p-2 border border-gray-300 rounded"
-                    value={newLocation.address_line2}
-                    onChange={(e) =>
-                      setNewLocation({
-                        ...newLocation,
-                        address_line2: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    City *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    className="mt-1 w-full p-2 border border-gray-300 rounded"
-                    value={newLocation.city}
-                    onChange={(e) =>
-                      setNewLocation({ ...newLocation, city: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    State *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    className="mt-1 w-full p-2 border border-gray-300 rounded"
-                    value={newLocation.state}
-                    onChange={(e) =>
-                      setNewLocation({ ...newLocation, state: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Country *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    className="mt-1 w-full p-2 border border-gray-300 rounded"
-                    value={newLocation.country}
-                    onChange={(e) =>
-                      setNewLocation({ ...newLocation, country: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Postal Code
-                  </label>
-                  <input
-                    type="text"
-                    className="mt-1 w-full p-2 border border-gray-300 rounded"
-                    value={newLocation.postal_code}
-                    onChange={(e) =>
-                      setNewLocation({
-                        ...newLocation,
-                        postal_code: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Phone
-                  </label>
-                  <input
-                    type="text"
-                    className="mt-1 w-full p-2 border border-gray-300 rounded"
+                    type="tel"
                     value={newLocation.phone}
-                    onChange={(e) =>
-                      setNewLocation({ ...newLocation, phone: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    className="mt-1 w-full p-2 border border-gray-300 rounded"
-                    value={newLocation.email}
-                    onChange={(e) =>
-                      setNewLocation({ ...newLocation, email: e.target.value })
-                    }
+                    onChange={(e) => setNewLocation({ ...newLocation, phone: e.target.value })}
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Address Line 1</label>
+                <input
+                  type="text"
+                  value={newLocation.address_line1}
+                  onChange={(e) => setNewLocation({ ...newLocation, address_line1: e.target.value })}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Address Line 2</label>
+                <input
+                  type="text"
+                  value={newLocation.address_line2}
+                  onChange={(e) => setNewLocation({ ...newLocation, address_line2: e.target.value })}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">City</label>
+                  <input
+                    type="text"
+                    value={newLocation.city}
+                    onChange={(e) => setNewLocation({ ...newLocation, city: e.target.value })}
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">State</label>
+                  <input
+                    type="text"
+                    value={newLocation.state}
+                    onChange={(e) => setNewLocation({ ...newLocation, state: e.target.value })}
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Postal Code</label>
+                  <input
+                    type="text"
+                    value={newLocation.postal_code}
+                    onChange={(e) => setNewLocation({ ...newLocation, postal_code: e.target.value })}
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Country</label>
+                  <input
+                    type="text"
+                    value={newLocation.country}
+                    onChange={(e) => setNewLocation({ ...newLocation, country: e.target.value })}
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="is_primary"
+                  checked={newLocation.is_primary}
+                  onChange={(e) => setNewLocation({ ...newLocation, is_primary: e.target.checked })}
+                  className="rounded border-gray-300 text-egyptian-blue"
+                />
+                <label htmlFor="is_primary" className="text-sm text-gray-700">
+                  Set as primary location
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-6">
                 <button
                   type="button"
                   onClick={() => setIsAddingLocation(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-800"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-4 py-2 bg-egyptian-blue text-white rounded hover:bg-egyptian-blue/90 disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-medium text-white bg-egyptian-blue hover:bg-egyptian-blue/90 
+                    rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Adding...' : 'Add Location'}
                 </button>
@@ -389,6 +312,10 @@ const BusinessLocations = ({
             </form>
           </div>
         </div>
+      )}
+
+      {error && (
+        <p className="text-sm text-red-600 mt-2">{error}</p>
       )}
     </div>
   );
