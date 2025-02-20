@@ -150,7 +150,7 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
     setError('');
 
     try {
-      // Remove UI-only fields and handle parent_business_id
+      // Remove UI-only fields and prepare data for submission
       const { parent_business_id, ...dataToSubmit } = formData;
       
       // Ensure business_type is one of the allowed values

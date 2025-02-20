@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 import { Building2, MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Business } from '@/types/business';
@@ -14,7 +13,6 @@ interface BusinessCardProps {
 
 export function BusinessCard({ business, isLoading = false }: BusinessCardProps) {
   const router = useRouter();
-  const pathname = useRouter();
 
   if (isLoading) {
     return (
