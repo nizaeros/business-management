@@ -80,7 +80,7 @@ export async function uploadBusinessLogo(
     }
     
     // Upload new file
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from(STORAGE_BUCKETS.PUBLIC)
       .upload(filePath, file, {
         cacheControl: '3600',
