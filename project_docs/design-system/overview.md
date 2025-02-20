@@ -68,12 +68,16 @@
   - Input (with icon support)
   - Select (with custom styling)
   - Checkbox (with label support)
+- [x] Loading States
+  - Skeleton components
+  - Progress indicators
+  - Transition effects
 
 ### In Progress
-- [ ] Loading States
 - [ ] Empty States
 - [ ] Data Display Components
 - [ ] Navigation Components
+- [ ] Dark Mode Support
 
 ### Usage Examples
 
@@ -143,7 +147,7 @@
 ```
 
 ## Next Steps
-1. Add loading and empty states
+1. Add empty states
 2. Create data display components
 3. Add navigation components
 4. Complete component documentation
