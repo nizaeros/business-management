@@ -62,17 +62,19 @@ export function BusinessCard({ business, isLoading = false, onEdit }: BusinessCa
             <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-gray-50 flex-shrink-0 
               border border-gray-100 group-hover:border-egyptian-blue/20 transition-colors shadow-sm"
             >
-              {business.logo_url ? (
+              {business.logo_short_url ? (
                 <Image
-                  src={business.logo_url}
+                  src={business.logo_short_url}
                   alt={`${business.name} logo`}
                   fill
-                  className="object-cover"
-                  sizes="40px"
+                  className="object-contain p-1"
+                  sizes="48px"
+                  priority
+                  unoptimized
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <Building2 className="w-5 h-5 text-gray-400" />
+                  <Building2 className="w-6 h-6 text-gray-400" />
                 </div>
               )}
             </div>

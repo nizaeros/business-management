@@ -217,6 +217,7 @@ components/business/HierarchyTree
 - Loading states and animations
 - ESLint configuration and fixes
 - Vercel deployment setup
+- Location management features
 
 🔄 In Progress:
 - Component documentation
@@ -226,7 +227,6 @@ components/business/HierarchyTree
 - Business hierarchy visualization
 
 ⏳ Pending:
-- Business locations management
 - Contact management
 - Advanced search features
 - Export functionality

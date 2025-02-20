@@ -11,7 +11,8 @@ export interface Business {
   has_parent: boolean;
   parent_business_id: string | null;
   status: BusinessStatus;
-  logo_url?: string | null;
+  logo_short_url: string | null;
+  logo_full_url: string | null;
   created_at: string;
   created_by: string;
   updated_at: string;

@@ -137,10 +137,12 @@ export default async function BusinessDetailsPage({ params }: PageProps) {
       </div>
 
       {/* Business Locations */}
-      <BusinessLocations 
-        business={business as Business} 
-        initialLocations={locations as BusinessLocation[] || []} 
-      />
+      <div className="space-y-4">
+        <BusinessLocations 
+          business={business as Business} 
+          initialLocations={locations as BusinessLocation[] || []} 
+        />
+      </div>
     </div>
   );
 }

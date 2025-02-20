@@ -6,6 +6,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Building2, MapPin } from 'lucide-react';
 import type { Business, BusinessType } from '@/types/business';
 import type { PostgrestError } from '@supabase/supabase-js';
+import { LogoUpload } from './LogoUpload';
 
 interface BusinessFormProps {
   initialData?: Partial<Business>;
@@ -33,6 +34,8 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
     has_parent: initialData?.has_parent || false,
     parent_business_id: initialData?.parent_business_id || '',
     status: initialData?.status || 'active',
+    logo_short_url: initialData?.logo_short_url || '',
+    logo_full_url: initialData?.logo_full_url || '',
     // Location fields
     address_line1: initialData?.address_line1 || '',
     address_line2: initialData?.address_line2 || '',
@@ -43,6 +46,7 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
 
   const [parentBusinesses, setParentBusinesses] = useState<Business[]>([]);
   const [error, setError] = useState('');
+  const [logoUploading, setLogoUploading] = useState(false);
 
   // Load potential parent businesses based on selected business type
   const loadParentBusinesses = useCallback(async () => {
@@ -62,9 +66,11 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
         registered_name,
         business_code,
         business_type,
+        has_parent,
         parent_business_id,
         status,
-        logo_url,
+        logo_short_url,
+        logo_full_url,
         created_at,
         created_by,
         updated_at,
@@ -117,7 +123,10 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
     const transformedData = (data || []).map(business => ({
       ...business,
       // Ensure has_parent is derived from parent_business_id
-      has_parent: business.parent_business_id !== null
+      has_parent: business.parent_business_id !== null,
+      // Ensure logo fields are properly typed
+      logo_short_url: business.logo_short_url || null,
+      logo_full_url: business.logo_full_url || null
     })) as Business[];
     
     console.log('Loaded parent businesses:', transformedData);
@@ -146,6 +155,12 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (logoUploading) {
+      setError('Please wait for logo upload to complete');
+      return;
+    }
+    
     setLoading(true);
     setError('');
 
@@ -165,7 +180,9 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
         parent_business_id: formData.parent_business_id || null,
         // Ensure these fields are properly set
         business_type: dataToSubmit.business_type,
-        status: dataToSubmit.status || 'active'
+        status: dataToSubmit.status || 'active',
+        logo_short_url: formData.logo_short_url || null,
+        logo_full_url: formData.logo_full_url || null
       };
 
       console.log('Submitting business data:', submitData);
@@ -207,7 +224,11 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
           .eq('id', initialData.id);
 
         if (error) throw error;
-        router.push('/internal/businesses');
+        
+        // Only redirect if we're not in the middle of a logo upload
+        if (!loading) {
+          router.push('/internal/businesses');
+        }
       }
     } catch (err) {
       const error = err as PostgrestError;
@@ -231,6 +252,10 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
       // Reset parent_business_id when switching to headquarters
       parent_business_id: type === 'global_headquarters' ? '' : prev.parent_business_id
     }));
+  };
+
+  const handleLogoLoadingChange = (isLoading: boolean) => {
+    setLogoUploading(isLoading);
   };
 
   return (
@@ -279,9 +304,45 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
           {/* Basic Information */}
           {currentStep === 'basic' && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Business Name</label>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Business Logos
+                  </label>
+                  <div className="mt-2 grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-2">
+                        Icon (Square Format)
+                      </label>
+                      <LogoUpload
+                        businessId={initialData?.id || 'temp'}
+                        type="short"
+                        currentUrl={formData.logo_short_url}
+                        onUpload={(url) => setFormData(prev => ({ ...prev, logo_short_url: url }))}
+                        onError={setError}
+                        onLoadingChange={handleLogoLoadingChange}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-2">
+                        Full Logo
+                      </label>
+                      <LogoUpload
+                        businessId={initialData?.id || 'temp'}
+                        type="full"
+                        currentUrl={formData.logo_full_url}
+                        onUpload={(url) => setFormData(prev => ({ ...prev, logo_full_url: url }))}
+                        onError={setError}
+                        onLoadingChange={handleLogoLoadingChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-span-2">
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                    Business Name
+                  </label>
                   <input
                     type="text"
                     name="name"
@@ -518,7 +579,7 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
               {currentStep === 'location' && (
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || logoUploading}
                   className="px-4 py-2 text-sm font-medium text-white bg-[#1034A6] border border-transparent rounded-md shadow-sm hover:bg-[#0d2b8b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1034A6] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Saving...' : 'Save Business'}

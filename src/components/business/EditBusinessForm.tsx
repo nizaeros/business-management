@@ -21,12 +21,32 @@ export function EditBusinessForm({ businessId }: EditBusinessFormProps) {
       try {
         const { data, error } = await supabase
           .from('businesses')
-          .select('*')
+          .select(`
+            id,
+            name,
+            registered_name,
+            business_code,
+            business_type,
+            has_parent,
+            parent_business_id,
+            status,
+            logo_short_url,
+            logo_full_url,
+            address_line1,
+            address_line2,
+            city,
+            state,
+            country,
+            created_at,
+            created_by,
+            updated_at,
+            updated_by
+          `)
           .eq('id', businessId)
           .single();
 
         if (error) throw error;
-        setBusiness(data);
+        setBusiness(data as Business);
       } catch (error) {
         if (error instanceof Error || 'message' in (error as object)) {
           setError((error as Error | PostgrestError).message);
