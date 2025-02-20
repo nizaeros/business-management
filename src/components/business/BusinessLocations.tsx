@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { MapPin, Plus, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { Business, BusinessLocation } from '@/types/business';
 
 interface BusinessLocationsProps {

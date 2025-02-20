@@ -151,7 +151,7 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
 
     try {
       // Remove UI-only fields and handle parent_business_id
-      const { has_parent, ...dataToSubmit } = formData;
+      const { parent_business_id, ...dataToSubmit } = formData;
       
       // Ensure business_type is one of the allowed values
       if (!['global_headquarters', 'regional_headquarters', 'branch', 'franchise'].includes(dataToSubmit.business_type)) {

@@ -14,7 +14,7 @@ interface BusinessCardProps {
 
 export function BusinessCard({ business, isLoading = false }: BusinessCardProps) {
   const router = useRouter();
-  const [isNavigating, setIsNavigating] = useState(false);
+  const pathname = useRouter();
 
   if (isLoading) {
     return (
@@ -40,7 +40,6 @@ export function BusinessCard({ business, isLoading = false }: BusinessCardProps)
   };
 
   const handleCardClick = () => {
-    setIsNavigating(true);
     router.push(`/internal/businesses/${business.id}`);
   };
 
