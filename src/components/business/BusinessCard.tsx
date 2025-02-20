@@ -9,9 +9,10 @@ import type { Business } from '@/types/business';
 interface BusinessCardProps {
   business: Business;
   isLoading?: boolean;
+  onEdit?: (business: Business) => void;
 }
 
-export function BusinessCard({ business, isLoading = false }: BusinessCardProps) {
+export function BusinessCard({ business, isLoading = false, onEdit }: BusinessCardProps) {
   const router = useRouter();
 
   if (isLoading) {
@@ -105,6 +106,19 @@ export function BusinessCard({ business, isLoading = false }: BusinessCardProps)
                 </div>
               )}
             </div>
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            {onEdit && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(business);
+                }}
+                className="text-sm text-gray-500 hover:text-primary"
+              >
+                Edit
+              </button>
+            )}
           </div>
         </div>
       </CardContent>
