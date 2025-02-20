@@ -1,52 +1,43 @@
 'use client';
 
 import { forwardRef } from 'react';
-import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
-  error?: boolean;
+interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
+  error?: string;
 }
 
 const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({
   className,
-  error,
-  disabled,
   label,
-  id,
+  error,
   ...props
 }, ref) => {
   return (
-    <div className="relative flex items-start">
-      <div className="flex items-center h-5">
+    <div className="flex items-start gap-2">
+      <div className="relative flex items-center">
         <input
-          ref={ref}
-          id={id}
           type="checkbox"
+          ref={ref}
           className={cn(
-            "h-4 w-4 rounded border border-gray-200",
-            "text-egyptian-blue",
-            "focus:ring-2 focus:ring-egyptian-blue/20 focus:ring-offset-0",
-            "disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400",
+            "w-4 h-4 border border-gray-300 rounded bg-white text-egyptian-blue focus:ring-egyptian-blue/20",
             error && "border-red-300",
             className
           )}
-          disabled={disabled}
           {...props}
         />
       </div>
       {label && (
-        <label
-          htmlFor={id}
-          className={cn(
-            "ml-2 block text-sm text-gray-700",
-            disabled && "text-gray-500 cursor-not-allowed",
-            error && "text-red-500"
-          )}
-        >
+        <label className={cn(
+          "text-sm text-gray-700",
+          error && "text-red-500"
+        )}>
           {label}
         </label>
+      )}
+      {error && (
+        <p className="text-xs text-red-500 mt-1">{error}</p>
       )}
     </div>
   );
@@ -54,4 +45,4 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({
 
 Checkbox.displayName = 'Checkbox';
 
-export { Checkbox };
+export { Checkbox, type CheckboxProps };
