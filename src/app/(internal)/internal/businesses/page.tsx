@@ -95,7 +95,7 @@ export default function BusinessesPage() {
         <h1 className="text-lg font-semibold text-gray-900">Businesses</h1>
         <button
           onClick={() => router.push('/internal/businesses/create')}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-egyptian-blue hover:bg-egyptian-blue/90 rounded-md transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-egyptian-blue hover:bg-egyptian-blue/90 rounded-md transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
           Add Business
@@ -104,35 +104,40 @@ export default function BusinessesPage() {
 
       <BusinessSearch onSearch={handleSearch} onFilter={handleFilter} />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {loading ? (
-          Array.from({ length: 6 }).map((_, i) => (
-            <BusinessCard key={i} business={{} as Business} isLoading={true} />
-          ))
-        ) : businesses.length > 0 ? (
-          businesses.map((business) => (
-            <BusinessCard
-              key={business.id}
-              business={business}
-              onEdit={handleEdit}
-            />
-          ))
-        ) : (
-          <div className="col-span-full py-12 text-center bg-gray-50/50 rounded-lg border border-gray-100">
-            <p className="text-sm text-gray-600">No businesses found</p>
-          </div>
-        )}
-      </div>
-
-      {hasMore && !loading && (
-        <div className="text-center pt-4">
-          <button
-            onClick={handleLoadMore}
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium text-gray-700 bg-gray-50/50 border border-gray-200 rounded-md hover:bg-gray-100/50 transition-colors"
-          >
-            Load More
-          </button>
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <BusinessCard key={i} isLoading={true} business={{} as Business} />
+          ))}
         </div>
+      ) : businesses.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-gray-400 mb-2">No businesses found</div>
+          <div className="text-sm text-gray-500">Try adjusting your search or filters</div>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {businesses.map((business) => (
+              <BusinessCard
+                key={business.id}
+                business={business}
+                onEdit={() => handleEdit(business)}
+              />
+            ))}
+          </div>
+
+          {hasMore && (
+            <div className="flex justify-center pt-4">
+              <button
+                onClick={handleLoadMore}
+                className="px-4 py-2 text-sm font-medium text-egyptian-blue bg-egyptian-blue/5 hover:bg-egyptian-blue/10 rounded-md transition-colors"
+              >
+                Load More
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
