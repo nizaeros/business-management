@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Building2, MapPin } from 'lucide-react';
+import { Building2, MapPin, Eye } from 'lucide-react';
 import type { Business } from '@/types/business';
 
 interface BusinessCardProps {
@@ -77,6 +77,13 @@ export function BusinessCard({ business, onEdit }: BusinessCardProps) {
             className="text-sm text-egyptian-blue hover:text-egyptian-blue/80"
           >
             Manage Contacts
+          </Link>
+          <Link
+            href={`/internal/businesses/${business.id}`}
+            className="text-sm text-egyptian-blue hover:text-egyptian-blue/80"
+          >
+            <Eye className="w-4 h-4" />
+            View Details
           </Link>
         </div>
         

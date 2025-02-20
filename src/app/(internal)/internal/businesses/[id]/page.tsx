@@ -1,54 +1,56 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { BusinessLocations } from '@/components/business/BusinessLocations';
+import { notFound } from 'next/navigation';
+import BusinessLocations from '@/components/business/BusinessLocations';
 import type { Business, BusinessLocation } from '@/types/business';
 
 export default async function BusinessDetailsPage({
-  params,
+  params
 }: {
-  params: { id: string };
+  params: { id: string }
 }) {
   const supabase = createServerComponentClient({ cookies });
+  const businessId = params.id;
 
   // Fetch business details
   const { data: business, error: businessError } = await supabase
     .from('businesses')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', businessId)
     .single();
 
   if (businessError) {
-    throw businessError;
+    console.error('Error fetching business:', businessError);
+    throw new Error('Failed to fetch business details');
+  }
+
+  if (!business) {
+    notFound();
   }
 
   // Fetch business locations
   const { data: locations, error: locationsError } = await supabase
     .from('business_locations')
     .select('*')
-    .eq('business_id', params.id)
+    .eq('business_id', businessId)
     .order('is_primary', { ascending: false });
 
   if (locationsError) {
-    throw locationsError;
+    console.error('Error fetching locations:', locationsError);
+    throw new Error('Failed to fetch business locations');
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-8">
+    <div className="container mx-auto p-6">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold mb-2">{business.name}</h1>
-        <p className="text-gray-600">
-          {business.business_type?.charAt(0).toUpperCase()}
-          {business.business_type?.slice(1)}
-        </p>
+        <p className="text-gray-600">{business.description}</p>
       </div>
 
-      <div className="space-y-8">
-        {/* Business Locations Section */}
-        <BusinessLocations 
-          business={business as Business} 
-          locations={locations as BusinessLocation[]} 
-        />
-      </div>
+      <BusinessLocations 
+        business={business as Business} 
+        initialLocations={locations as BusinessLocation[] || []} 
+      />
     </div>
   );
 }

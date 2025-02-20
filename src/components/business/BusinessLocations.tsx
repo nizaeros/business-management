@@ -1,21 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { MapPin, Plus, X } from 'lucide-react';
-import type { Business, BusinessLocation } from '@/types/business';
+import { Business, BusinessLocation } from '@/types/business';
 
 interface BusinessLocationsProps {
   business: Business;
-  locations?: BusinessLocation[];
-  onLocationAdded?: () => void;
+  initialLocations: BusinessLocation[];
 }
 
-export function BusinessLocations({ business, locations = [], onLocationAdded }: BusinessLocationsProps) {
-  const supabase = createClientComponentClient();
+const BusinessLocations = ({ 
+  business, 
+  initialLocations 
+}: BusinessLocationsProps) => {
+  const [locations, setLocations] = useState<BusinessLocation[]>(initialLocations);
   const [isAddingLocation, setIsAddingLocation] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const supabase = createClientComponentClient();
+
   const [newLocation, setNewLocation] = useState({
     name: '',
     address_line1: '',
@@ -29,22 +33,93 @@ export function BusinessLocations({ business, locations = [], onLocationAdded }:
     is_primary: false
   });
 
+  useEffect(() => {
+    async function getUserType() {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('user_type')
+        .eq('id', user?.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user type:', error);
+        return;
+      }
+
+      console.log('Current user type:', userData?.user_type);
+    }
+
+    getUserType();
+  }, [supabase]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError(null);
 
     try {
-      const { error } = await supabase
-        .from('business_locations')
-        .insert({
-          ...newLocation,
-          business_id: business.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('User error:', userError);
+        throw new Error('Failed to get current user');
+      }
 
-      if (error) throw error;
+      if (!user) {
+        throw new Error('No authenticated user found');
+      }
+
+      // Get user type
+      const { data: userData, error: userDataError } = await supabase
+        .from('users')
+        .select('user_type')
+        .eq('id', user.id)
+        .single();
+
+      if (userDataError) {
+        console.error('User data error:', userDataError);
+        throw new Error('Failed to get user data');
+      }
+
+      console.log('Current user:', {
+        id: user.id,
+        userType: userData?.user_type,
+      });
+
+      // Prepare location data
+      const locationData = {
+        ...newLocation,
+        business_id: business.id,
+        created_by: user.id,
+        updated_by: user.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        status: 'active' as const
+      };
+
+      console.log('Inserting location data:', locationData);
+
+      const { data: insertedLocation, error: locationError } = await supabase
+        .from('business_locations')
+        .insert(locationData)
+        .select()
+        .single();
+
+      if (locationError) {
+        console.error('Location insert error:', locationError);
+        throw new Error(`Failed to add location: ${locationError.message}`);
+      }
+
+      if (!insertedLocation) {
+        throw new Error('No location data returned after insert');
+      }
+
+      console.log('Successfully inserted location:', insertedLocation);
+
+      // Update locations state
+      setLocations(prev => [...prev, insertedLocation]);
 
       // Reset form and close modal
       setNewLocation({
@@ -60,13 +135,20 @@ export function BusinessLocations({ business, locations = [], onLocationAdded }:
         is_primary: false
       });
       setIsAddingLocation(false);
-      
-      // Notify parent to refresh locations
-      if (onLocationAdded) {
-        onLocationAdded();
-      }
     } catch (error: any) {
-      setError(error.message);
+      console.error('Full error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        error
+      });
+      setError(
+        error.message || 
+        error.details || 
+        error.hint || 
+        'An error occurred while adding the location'
+      );
     } finally {
       setLoading(false);
     }
@@ -304,4 +386,6 @@ export function BusinessLocations({ business, locations = [], onLocationAdded }:
       )}
     </div>
   );
-}
+};
+
+export default BusinessLocations;
