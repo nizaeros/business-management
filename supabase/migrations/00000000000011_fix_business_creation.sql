@@ -1,4 +1,7 @@
--- Create a function to handle business and location creation in a single transaction
+-- Drop existing function
+drop function if exists create_business_with_location;
+
+-- Re-create function with fixes
 create or replace function create_business_with_location(
     business_data jsonb,
     location_data jsonb

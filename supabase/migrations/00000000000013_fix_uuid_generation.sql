@@ -1,4 +1,7 @@
--- Create a function to handle business and location creation in a single transaction
+-- Drop existing function
+drop function if exists create_business_with_location;
+
+-- Recreate function using gen_random_uuid() instead of uuid_generate_v4()
 create or replace function create_business_with_location(
     business_data jsonb,
     location_data jsonb
@@ -15,8 +18,8 @@ declare
 begin
     -- Start transaction
     begin
-        -- Generate new UUID for business
-        new_business_id := uuid_generate_v4();
+        -- Generate new UUID for business using gen_random_uuid()
+        new_business_id := gen_random_uuid();
         
         -- Insert business with explicit UUID
         insert into businesses
