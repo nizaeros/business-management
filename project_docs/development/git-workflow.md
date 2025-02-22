@@ -4,8 +4,7 @@
 This document outlines our Git workflow for the Business Management project, ensuring consistent and reliable development processes.
 
 ## Branch Structure
-- `main`: Production-ready code
-- `staging`: Testing and integration branch
+- `staging`: Primary deployment branch for Vercel
 - `feature/*`: Individual feature branches
 
 ## Development Workflow
@@ -41,21 +40,28 @@ Process for completing and merging features:
 # Push feature to remote
 git push origin feature/your-feature-name
 
-# Merge to staging
+# Merge to staging and deploy
 git checkout staging
 git merge feature/your-feature-name
 git push origin staging
+vercel --prod  # Deploy to Vercel staging environment
 ```
 
-### 4. Production Release
-After thorough testing on staging:
-```powershell
-# Update main with staging changes
-git checkout main
-git pull origin main
-git merge staging
-git push origin main
-```
+## Deployment Strategy
+
+### Staging Environment (Vercel)
+- All deployments go to the staging environment
+- The `staging` branch is our primary deployment branch
+- Automatic deployments are triggered on push to `staging`
+- Manual deployments can be done using `vercel --prod`
+
+### Production Considerations
+- Main branch deployment is currently not configured
+- Production deployment will be set up after:
+  1. Database setup and migration
+  2. Environment configuration
+  3. Security review
+  4. Performance testing
 
 ## Best Practices
 
@@ -77,7 +83,7 @@ git push origin main
 4. Update documentation when necessary
 
 ### Safety Measures
-- Never commit directly to `main` or `staging`
+- Never commit directly to `staging`
 - Always create feature branches for new work
 - Keep branches up to date with staging
 - Delete feature branches after merging
@@ -93,38 +99,42 @@ git checkout -b bugfix/login-validation
 ```
 
 ### Hotfixes
-For urgent production fixes:
+For urgent fixes in staging:
 ```powershell
-git checkout main
-git pull origin main
-git checkout -b hotfix/critical-security-fix
-# After fix
-git checkout main
-git merge hotfix/critical-security-fix
-git push origin main
 git checkout staging
-git merge main
+git pull origin staging
+git checkout -b hotfix/critical-security-fix
+# After fix and testing
+git checkout staging
+git merge hotfix/critical-security-fix
 git push origin staging
+vercel --prod  # Deploy fix to staging
 ```
 
-### Resolving Conflicts
-If you encounter merge conflicts:
-1. Don't panic - conflicts are normal
-2. Understand the changes causing conflicts
-3. Resolve conflicts in your code editor
-4. Test thoroughly after resolution
-5. Commit the resolved changes
+### Deployment Commands
+```powershell
+# Deploy to staging
+vercel --prod
 
-## Automation Support
-The repository is configured to:
-- Prevent direct pushes to `main`
-- Require pull request reviews
-- Run automated tests on pull requests
+# View deployment logs
+vercel logs
 
-## Need Help?
-If you're unsure about any Git operations or encounter issues:
-1. Check this documentation first
-2. Ask team members for guidance
-3. Never force push unless absolutely necessary and team is informed
+# List deployments
+vercel ls
+```
 
-Remember: This workflow is designed to maintain code quality and prevent conflicts. Following these guidelines helps keep our development process smooth and efficient.
+## Vercel Deployment Guidelines
+
+### Pre-deployment Checklist
+1. All tests passing
+2. Code reviewed and approved
+3. Documentation updated
+4. Environment variables configured
+5. Database migrations ready
+
+### Post-deployment Verification
+1. Check deployment status in Vercel dashboard
+2. Verify feature functionality
+3. Monitor error logs
+4. Check performance metrics
+5. Validate database operations
