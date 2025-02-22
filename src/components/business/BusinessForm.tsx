@@ -6,6 +6,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Building2, MapPin } from 'lucide-react';
 import type { Business, BusinessType } from '@/types/business';
 import type { PostgrestError } from '@supabase/supabase-js';
+import toast from 'react-hot-toast';
 import { LogoUpload } from './LogoUpload';
 
 interface BusinessFormProps {
@@ -157,7 +158,7 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
     e.preventDefault();
     
     if (logoUploading) {
-      setError('Please wait for logo upload to complete');
+      toast.error('Please wait for logo upload to complete');
       return;
     }
     
@@ -215,6 +216,7 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
           throw businessError;
         }
         console.log('New business created:', newBusiness);
+        toast.success('Business saved successfully');
         router.push('/internal/businesses');
       } else {
         // For existing business
@@ -227,12 +229,14 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
         
         // Only redirect if we're not in the middle of a logo upload
         if (!loading) {
+          toast.success('Business saved successfully');
           router.push('/internal/businesses');
         }
       }
     } catch (err) {
       const error = err as PostgrestError;
       setError(`Error creating business: ${error.message}`);
+      toast.error('Failed to save business. Please try again.');
       console.error('Error:', error);
     } finally {
       setLoading(false);
@@ -256,6 +260,11 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
 
   const handleLogoLoadingChange = (isLoading: boolean) => {
     setLogoUploading(isLoading);
+  };
+
+  const handleLogoError = (error: string) => {
+    setError(error);
+    toast.error(error);
   };
 
   return (
@@ -318,8 +327,11 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
                         businessId={initialData?.id || 'temp'}
                         type="short"
                         currentUrl={formData.logo_short_url}
-                        onUpload={(url) => setFormData(prev => ({ ...prev, logo_short_url: url }))}
-                        onError={setError}
+                        onUpload={(url) => {
+                          setFormData(prev => ({ ...prev, logo_short_url: url }));
+                          toast.success('Logo uploaded successfully');
+                        }}
+                        onError={handleLogoError}
                         onLoadingChange={handleLogoLoadingChange}
                       />
                     </div>
@@ -331,8 +343,11 @@ export function BusinessForm({ initialData }: BusinessFormProps) {
                         businessId={initialData?.id || 'temp'}
                         type="full"
                         currentUrl={formData.logo_full_url}
-                        onUpload={(url) => setFormData(prev => ({ ...prev, logo_full_url: url }))}
-                        onError={setError}
+                        onUpload={(url) => {
+                          setFormData(prev => ({ ...prev, logo_full_url: url }));
+                          toast.success('Logo uploaded successfully');
+                        }}
+                        onError={handleLogoError}
                         onLoadingChange={handleLogoLoadingChange}
                       />
                     </div>

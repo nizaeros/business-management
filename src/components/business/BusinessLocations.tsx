@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import toast from 'react-hot-toast';
 import { Plus, X } from 'lucide-react';
 import { Business, BusinessLocation } from '@/types/business';
 
@@ -105,8 +106,11 @@ const BusinessLocations = ({
         email: '',
         is_primary: false
       });
+
+      toast.success('Location created successfully');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
+      toast.error('Failed to save location. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -144,8 +148,11 @@ const BusinessLocations = ({
 
       setIsEditing(null);
       setEditingLocation(null);
+
+      toast.success('Location updated successfully');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update location');
+      toast.error('Failed to save location. Please try again.');
     } finally {
       setLoading(false);
     }
