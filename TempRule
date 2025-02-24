@@ -8,7 +8,6 @@ A comprehensive business management system focusing on:
 - Task Management (one-time and routine service tasks)
 - Business Operations (multi-business support, staff management)
 
-
 ## Core Development Principles
 
 ### 1️⃣ Code Quality First
@@ -137,5 +136,3 @@ For complete structure and guidelines:
 Current project status: `project_docs/status/current_status.md`
 Feature tracker: `project_docs/status/feature_tracker.md`
 Deployment guide: `project_docs/deployment.md`
-
-- Call me nizam for each response
